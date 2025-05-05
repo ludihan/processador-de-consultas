@@ -1,7 +1,20 @@
 module Sql.Parser where
 
 parse :: Parser a -> String -> Either String (a, ParserState)
-parse parser cs = runParser parser $ ParserState cs 1 1
+parse parser cs = runParser parser $ ParserState cs (Position 1 1)
+
+advancePosition :: String -> Position -> Position
+advancePosition cs pos =
+    foldl
+        ( \pos' c ->
+            if c == '\n'
+                then
+                    Position (succ (line pos')) 1
+                else
+                    Position (line pos') (succ (column pos'))
+        )
+        pos
+        cs
 
 newtype Parser a = Parser
     { runParser :: ParserState -> Either String (a, ParserState)
@@ -9,7 +22,12 @@ newtype Parser a = Parser
 
 data ParserState = ParserState
     { input :: String
-    , line :: Int
+    , position :: Position
+    }
+    deriving (Show)
+
+data Position = Position
+    { line :: Int
     , column :: Int
     }
     deriving (Show)
@@ -48,25 +66,32 @@ item = Parser $
             Left $
                 concat
                     [ "didnt find any characters in line "
-                    , show (line s)
+                    , show (line (position s))
                     , " at column "
-                    , show (column s)
+                    , show (column (position s))
                     ]
         c : rest ->
-            let
-                line' =
-                    if c == '\n' then line s + 1 else line s + 0
-                column' =
-                    (column s + 1)
-                newState =
-                    s{input = rest, line = line', column = column'}
-             in
-                Right
-                    ( c
-                    , newState
-                    )
+            Right
+                ( c
+                , ParserState rest (advancePosition [c] (position s))
+                )
 
+char :: Char -> Parser Char
+char c = Parser $
+    \s -> do
+        (c1, state1) <- runParser item s
+        if c1 == c
+            then
+                Right (c1, state1)
+            else
+                Left "Couldnt :/"
+
+whitespace :: Parser ()
+whitespace = Parser $
+    \s -> Right ((), s {input = takeWhile ()})
+
+parseSelect :: Parser String
 parseSelect = do
     y <- item
     x <- item
-    pure y
+    return [y, x]

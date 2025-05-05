@@ -1,6 +1,6 @@
 module Sql.Types where
 
-data Select = Select Column [From] [Join] Where
+data Select = Select [Column] [From] [Join] Where
 
 type Database = [(Table, [(Column, ColumnType)])]
 
