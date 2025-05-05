@@ -44,26 +44,26 @@ instance Monad Parser where
 item :: Parser Char
 item = Parser $
     \s -> case input s of
-        "" ->
+        [] ->
             Left $
-                "didnt find any characters in line "
-                    ++ show (line s)
-                    ++ " at column "
-                    ++ show (column s)
-        (c : rest) ->
+                concat
+                    [ "didnt find any characters in line "
+                    , show (line s)
+                    , " at column "
+                    , show (column s)
+                    ]
+        c : rest ->
             let
                 line' =
                     if c == '\n' then line s + 1 else line s + 0
                 column' =
                     (column s + 1)
+                newState =
+                    s{input = rest, line = line', column = column'}
              in
                 Right
                     ( c
-                    , s
-                        { input = rest
-                        , line = line'
-                        , column = column'
-                        }
+                    , newState
                     )
 
 parseSelect = do
