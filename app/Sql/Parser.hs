@@ -67,5 +67,6 @@ item = Parser $
                     )
 
 parseSelect = do
-    _ <- item
-    item
+    y <- item
+    x <- item
+    pure y

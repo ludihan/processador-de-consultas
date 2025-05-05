@@ -65,7 +65,11 @@ executable processador-de-consultas
     -- other-extensions:
 
     -- Other library packages from which modules are imported.
-    build-depends:    base ^>=4.17.2.1
+    build-depends:
+        base ^>=4.18.3.0,
+        monomer,
+        lens,
+        text-show
 
     -- Directories containing source files.
     hs-source-dirs:   app
