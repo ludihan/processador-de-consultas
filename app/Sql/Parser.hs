@@ -1,5 +1,7 @@
 module Sql.Parser where
 
+import Data.Char
+
 parse :: Parser a -> String -> Either String (a, ParserState)
 parse parser cs = runParser parser $ ParserState cs (Position 1 1)
 
@@ -88,7 +90,16 @@ char c = Parser $
 
 whitespace :: Parser ()
 whitespace = Parser $
-    \s -> Right ((), s {input = takeWhile ()})
+    \s ->
+        case input s of
+            [] ->
+                Right ((), s)
+            (c : cs) ->
+                if isSpace c
+                    then
+                        runParser whitespace s{input = cs}
+                    else
+                        Right ((), s)
 
 parseSelect :: Parser String
 parseSelect = do
