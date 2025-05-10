@@ -1,19 +1,18 @@
 module Sql.Types where
 
-data Select = Select [Column] From (Maybe [Join]) (Maybe Where)
+data Select = Select Columns From Joins (Maybe Where)
     deriving (Show)
 
 type Database = [(Table, [(Column, ColumnType)])]
 
 type Query = String
 type Column = String
+type Columns = [Column]
 type Table = String
-
-type Where = Pred
 type From = Table
-
-data Join = Join Table Pred
-    deriving (Show)
+type Join = (Table, Pred)
+type Joins = [Join]
+type Where = Pred
 
 data ColumnType
     = Int
@@ -25,7 +24,6 @@ data ColumnType
 
 data Pred
     = And Pred Pred
-    | Or Pred Pred
     | BinOp Op Column Column
     deriving (Eq, Show)
 
