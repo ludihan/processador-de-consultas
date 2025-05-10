@@ -21,7 +21,8 @@ executable processador-de-consultas
         base ^>=4.18.3.0,
         monomer,
         lens,
-        text-show
+        text-show,
+        megaparsec
 
     ghc-options:      -Wall
     hs-source-dirs:   app

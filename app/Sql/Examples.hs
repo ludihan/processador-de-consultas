@@ -1,8 +1,8 @@
 module Sql.Examples where
 
-import Sql.Types
+import qualified Sql.Types as T
 
-sqlExample1 :: Query
+sqlExample1 :: T.Query
 sqlExample1 = 
     "\
     \Select cliente.nome, pedido.idPedido, pedido.DataPedido, pedido.ValorTotalPedido\
@@ -10,7 +10,7 @@ sqlExample1 =
     \ where cliente.TipoCliente_idTipoCliente = 1 and pedido.ValorTotalPedido = 0;\
     \"
 
-sqlExample2 :: Query
+sqlExample2 :: T.Query
 sqlExample2 = 
     "\
     \Select cliente.nome, pedido.idPedido, pedido.DataPedido, Status.descricao, pedido.ValorTotalPedido\
@@ -19,7 +19,7 @@ sqlExample2 =
     \ where Status.descricao = 'Aberto' and cliente.TipoCliente_idTipoCliente = 1 and pedido.ValorTotalPedido = 0;\
     \"
 
-sqlExample3 :: Query
+sqlExample3 :: T.Query
 sqlExample3 =
     "\
     \Select cliente.nome, pedido.idPedido, pedido.DataPedido, Status.descricao, pedido.ValorTotalPedido, produto.QuantEstoque\
@@ -30,7 +30,7 @@ sqlExample3 =
     \ where Status.descricao = 'Aberto' and cliente.TipoCliente_idTipoCliente = 1 and pedido.ValorTotalPedido = 0 and produto.QuantEstoque > 0;\
     \"
 
-sqlExample4 :: Query
+sqlExample4 :: T.Query
 sqlExample4 =
     "\
     \Select cliente.nome, tipocliente.descricao, pedido.idPedido, pedido.DataPedido, Status.descricao, pedido.ValorTotalPedido, categoria.descricao, produto.QuantEstoque\
