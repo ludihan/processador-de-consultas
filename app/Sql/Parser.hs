@@ -58,7 +58,8 @@ literal :: Parser T.Literal
 literal =
     try parseFloatLiteral
         <|> try parseIntLiteral
-        <|> parseStringLiteral
+        <|> try parseStringLiteral
+        <|> parseColumn
 
 operator :: Parser T.Op
 operator =
@@ -80,19 +81,19 @@ parseFrom = do
     space
     return x
 
-parsePred :: Parser [T.Pred]
+parsePred :: Parser T.Where
 parsePred =
     let
-        p :: Parser T.Pred
+        p :: Parser (T.Column, T.Op, T.Literal)
         p = do
             space
-            column1 <- parseColumn
+            col <- parseColumn
             space
             op <- operator
             space
             v <- literal
             space
-            return $ T.BinOp op column1 v
+            return (col, op, v)
      in
         do
             space

@@ -12,7 +12,7 @@ type Table = String
 type From = Table
 type Join = (Table, (Column, Op, Column))
 type Joins = [Join]
-type Where = [Pred]
+type Where = [(Column, Op, Literal)]
 
 type Literal = String
 -- int | float | string
@@ -23,10 +23,6 @@ data ColumnType
     | Varchar Int
     | Datetime
     | Decimal Int Int
-    deriving (Eq, Show)
-
-data Pred = 
-    BinOp Op Column Literal
     deriving (Eq, Show)
 
 data Op
