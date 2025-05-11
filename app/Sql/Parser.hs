@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
-{-# HLINT ignore "Redundant bracket" #-}
 module Sql.Parser where
 
 import Data.Void
@@ -41,24 +39,26 @@ parseStringLiteral :: Parser T.Literal
 parseStringLiteral = do
     space
     s1 <- single '\''
-    s2 <- many (asciiChar <|> letterChar <|> punctuationChar)
+    s2 <- many (letterChar <|> single '@' <|> single '_' <|> single '.')
     s3 <- single '\''
     space
     return $ [s1] ++ s2 ++ [s3]
 
 parseIntLiteral :: Parser T.Literal
 parseIntLiteral = do
-    x <- L.signed space L.float
-    return $ show x
+    x <- L.signed space L.decimal
+    return $ show (x :: Int)
 
 parseFloatLiteral :: Parser T.Literal
 parseFloatLiteral = do
     x <- L.signed space L.float
-    return $ show x
+    return $ show (x :: Double)
 
 literal :: Parser T.Literal
 literal =
-    try parseIntLiteral <|> try parseFloatLiteral <|> parseStringLiteral
+    try parseFloatLiteral
+        <|> try parseIntLiteral
+        <|> parseStringLiteral
 
 operator :: Parser T.Op
 operator =
@@ -156,7 +156,18 @@ parseSelect = do
     space
     _ <- string' "select"
     space
-    columns <- parseColumn `sepBy1` (space >> single ',' >> space)
+    columns <-
+        try
+            ( parseColumn
+                `sepBy1` (space >> single ',' >> space)
+            )
+            <|> ( do
+                    space
+                    x <- string' "*"
+                    space
+                    return [x]
+                )
+
     space
     from <- parseFrom
     space
