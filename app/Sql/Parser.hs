@@ -1,3 +1,5 @@
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+{-# HLINT ignore "Redundant bracket" #-}
 module Sql.Parser where
 
 import Data.Void
@@ -7,6 +9,7 @@ import Text.Megaparsec.Char
 
 import Data.List (intercalate)
 import qualified Sql.Types as T
+import qualified Text.Megaparsec.Char.Lexer as L
 
 type Parser = Parsec Void String
 
@@ -34,13 +37,28 @@ keywords = ["select", "from", "join", "where", "on"]
 identifier :: Parser String
 identifier = (:) <$> letterChar <*> many (alphaNumChar <|> single '_')
 
+parseStringLiteral :: Parser T.Literal
+parseStringLiteral = do
+    space
+    s1 <- single '\''
+    s2 <- many (asciiChar <|> letterChar <|> punctuationChar)
+    s3 <- single '\''
+    space
+    return $ [s1] ++ s2 ++ [s3]
+
+parseIntLiteral :: Parser T.Literal
+parseIntLiteral = do
+    x <- L.signed space L.float
+    return $ show x
+
+parseFloatLiteral :: Parser T.Literal
+parseFloatLiteral = do
+    x <- L.signed space L.float
+    return $ show x
+
 literal :: Parser T.Literal
 literal =
-    let
-        accepted = (alphaNumChar <|> single '_' <|> single '-' <|> single '@')
-     in
-        try (some accepted)
-            <|> between (char '\'') (char '\'') (some (accepted <|> single '.'))
+    try parseIntLiteral <|> try parseFloatLiteral <|> parseStringLiteral
 
 operator :: Parser T.Op
 operator =

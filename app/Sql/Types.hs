@@ -15,6 +15,7 @@ type Joins = [Join]
 type Where = [Pred]
 
 type Literal = String
+-- int | float | string
 
 data ColumnType
     = Int
@@ -24,7 +25,8 @@ data ColumnType
     | Decimal Int Int
     deriving (Eq, Show)
 
-data Pred = BinOp Op Column Literal
+data Pred = 
+    BinOp Op Column Literal
     deriving (Eq, Show)
 
 data Op
