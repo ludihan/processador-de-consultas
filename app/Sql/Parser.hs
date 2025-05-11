@@ -14,8 +14,6 @@ selectPretty :: String -> IO ()
 selectPretty sel =
     let a = parse parseSelect "<input>" sel
         formatList = intercalate ", "
-        formatJoins cols = show cols
-        formatWhere wher = show wher
      in case a of
             Left bundle -> putStr (errorBundlePretty bundle)
             Right (T.Select cols from joins wher) ->
@@ -26,9 +24,9 @@ selectPretty sel =
                         ++ "\nfrom: "
                         ++ from
                         ++ "\njoin: "
-                        ++ formatJoins joins
+                        ++ show joins
                         ++ "\nwhere: "
-                        ++ formatWhere wher
+                        ++ show wher
 
 keywords :: [String]
 keywords = ["select", "from", "join", "where", "on"]
