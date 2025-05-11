@@ -5,16 +5,31 @@ import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
 
-import Control.Applicative (Alternative)
 import qualified Sql.Types as T
 
 type Parser = Parsec Void String
+
+selectPretty :: String -> IO ()
+selectPretty sel = 
+    let a = parse parseSelect "<input>" sel
+    in case a of
+        Left bundle -> putStr (errorBundlePretty bundle)
+        Right xs -> print xs
+
 
 keywords :: [String]
 keywords = ["select", "from", "join", "where", "on"]
 
 identifier :: Parser String
 identifier = (:) <$> letterChar <*> many (alphaNumChar <|> single '_')
+
+literal :: Parser T.Literal
+literal =
+    let
+        accepted = (alphaNumChar <|> single '_' <|> single '-' <|> single '@')
+     in
+        try (some accepted)
+            <|> between (char '\'') (char '\'') (some (accepted <|> single '.'))
 
 operator :: Parser T.Op
 operator =
@@ -36,36 +51,47 @@ parseFrom = do
     space
     return x
 
-parsePredExpr :: Parser T.Pred
-parsePredExpr = do
-    space
-    column1 <- identifier
-    space
-    op <- operator
-    space
-    column2 <- identifier
-    space
-    return $ T.BinOp op column1 column2
-
-parsePred :: Parser T.Pred
-parsePred = do
-    space
-    preds <- parsePredExpr
-
-    return $ T.BinOp T.Eq "a" "a"
+parsePred :: Parser [T.Pred]
+parsePred =
+    let
+        p :: Parser T.Pred
+        p = do
+            space
+            column1 <- parseColumn
+            space
+            op <- operator
+            space
+            v <- literal
+            space
+            return $ T.BinOp op column1 v
+     in
+        do
+            space
+            p `sepBy1` (space >> string' "and" >> space)
 
 parseJoin :: Parser T.Join
-parseJoin = do
-    space
-    _ <- string' "join"
-    space
-    table <- identifier
-    space
-    on <- string' "on"
-    space
-    predic <- parsePred
-    space
-    return (table, predic)
+parseJoin =
+    let
+        p = do
+            space
+            c1 <- parseColumn
+            space
+            op <- operator
+            space
+            c2 <- parseColumn
+            return (c1, op, c2)
+     in
+        do
+            space
+            _ <- string' "join"
+            space
+            table <- identifier
+            space
+            _ <- string' "on"
+            space
+            cond <- p
+            space
+            return (table, cond)
 
 parseWhere :: Parser T.Where
 parseWhere = do
@@ -81,11 +107,11 @@ parseColumn =
     try
         ( do
             space
-            table <- some letterChar
+            table <- identifier
             space
             _ <- single '.'
             space
-            column <- some letterChar
+            column <- identifier
             space
             return (table ++ "." ++ column)
         )
@@ -101,18 +127,15 @@ parseSelect = do
     space
     _ <- string' "select"
     space
-    columns <- parseColumn `sepBy1` (single ',' >> space)
+    columns <- parseColumn `sepBy1` (space >> single ',' >> space)
     space
     from <- parseFrom
     space
     join <- many parseJoin
     space
-    wherE <- optional parseWhere
+    wher <- optional parseWhere
     space
     _ <- some (single ';')
     space
     eof
-    return $ T.Select columns from join wherE
-
-validateSelect :: T.Select -> Either String ()
-validateSelect stmt = Right ()
+    return $ T.Select columns from join wher
