@@ -1,4 +1,4 @@
-module Sql.Data where
+module Database.Schema where
 
 import Sql.Types as T
 

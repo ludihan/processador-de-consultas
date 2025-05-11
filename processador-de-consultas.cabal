@@ -14,8 +14,10 @@ executable processador-de-consultas
     other-modules:
         Sql.Parser,
         Sql.Types,
-        Sql.Data,
         Sql.Examples,
+        RA.Types,
+        RA.Converter,
+        Database.Schema
 
     build-depends:
         base ^>=4.18.3.0,
