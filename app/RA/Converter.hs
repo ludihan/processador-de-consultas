@@ -19,6 +19,9 @@ sqlSelect2RA (SqlT.Select cols from joins wher) =
             ( Selection allPreds (crossFromRelations (NE.fromList allRelations))
             )
 
+opt :: RAExpr -> RAExpr
+opt expr = undefined
+
 crossFromRelations :: NonEmpty Relation -> RAExpr
 crossFromRelations (x :| []) = Value x
 crossFromRelations (x :| xs) = Cross (Value x) (crossFromRelations $ NE.fromList xs)

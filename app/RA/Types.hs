@@ -15,4 +15,5 @@ data RAExpr
 
 type Value = String
 
-type Pred = [(Attribute, SqlT.Op, Value)]
+type RightPredValue = SqlT.RightPredValue
+type Pred = [(Attribute, SqlT.Op, RightPredValue)]

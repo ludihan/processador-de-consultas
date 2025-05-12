@@ -15,6 +15,7 @@ executable processador-de-consultas
         Sql.Parser,
         Sql.Types,
         Sql.Examples,
+        Sql.Validator,
         RA.Types,
         RA.Converter,
         Database.Schema,

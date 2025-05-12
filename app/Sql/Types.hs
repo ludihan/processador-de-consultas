@@ -1,7 +1,7 @@
 module Sql.Types where
 
 data Select = Select Columns From Joins (Maybe Where)
-    deriving (Show)
+    deriving (Eq, Show)
 
 type Database = [(Table, [Column])]
 
@@ -10,11 +10,15 @@ type Column = String
 type Columns = [Column]
 type Table = String
 type From = Table
-type Join = (Table, (Column, Op, Column))
+type Join = (Table, (Column, Op, RightPredValue))
 type Joins = [Join]
-type Where = [(Column, Op, Literal)]
+type Where = [(Column, Op, RightPredValue)]
 
-type Literal = String
+data RightPredValue
+    = RightPredLiteral String
+    | RightPredColumn String
+    deriving (Eq, Show)
+
 -- int | float | string
 
 data ColumnType

@@ -7,6 +7,7 @@ import Text.Megaparsec.Char
 
 import qualified Sql.Types as T
 import qualified Text.Megaparsec.Char.Lexer as L
+import qualified Data.Functor
 
 type Parser = Parsec Void String
 
@@ -16,31 +17,31 @@ keywords = ["select", "from", "join", "where", "on"]
 identifier :: Parser String
 identifier = (:) <$> letterChar <*> many (alphaNumChar <|> single '_')
 
-parseStringLiteral :: Parser T.Literal
+parseStringLiteral :: Parser T.RightPredValue
 parseStringLiteral = do
     space
     s1 <- single '\''
     s2 <- many (letterChar <|> single '@' <|> single '_' <|> single '.')
     s3 <- single '\''
     space
-    return $ [s1] ++ s2 ++ [s3]
+    return $ T.RightPredLiteral $ [s1] ++ s2 ++ [s3]
 
-parseIntLiteral :: Parser T.Literal
+parseIntLiteral :: Parser T.RightPredValue
 parseIntLiteral = do
     x <- L.signed space L.decimal
-    return $ show (x :: Int)
+    return $ T.RightPredLiteral $ show (x :: Int)
 
-parseFloatLiteral :: Parser T.Literal
+parseFloatLiteral :: Parser T.RightPredValue
 parseFloatLiteral = do
     x <- L.signed space L.float
-    return $ show (x :: Double)
+    return $ T.RightPredLiteral $ show (x :: Double)
 
-literal :: Parser T.Literal
+literal :: Parser T.RightPredValue
 literal =
     try parseFloatLiteral
         <|> try parseIntLiteral
         <|> try parseStringLiteral
-        <|> parseColumn
+        <|> (parseColumn Data.Functor.<&> T.RightPredColumn)
 
 operator :: Parser T.Op
 operator =
@@ -65,7 +66,7 @@ parseFrom = do
 parsePred :: Parser T.Where
 parsePred =
     let
-        p :: Parser (T.Column, T.Op, T.Literal)
+        p :: Parser (T.Column, T.Op, T.RightPredValue)
         p = do
             space
             col <- parseColumn
@@ -89,7 +90,7 @@ parseJoin =
             space
             op <- operator
             space
-            c2 <- parseColumn
+            c2 <- parseColumn Data.Functor.<&> T.RightPredColumn
             return (c1, op, c2)
      in
         do

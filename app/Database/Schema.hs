@@ -1,6 +1,8 @@
 module Database.Schema where
 
+import Data.Char
 import Sql.Types as T
+import qualified Data.Bifunctor
 
 database :: T.Database
 database =
@@ -99,3 +101,9 @@ database =
             ]
         )
     ]
+
+toLowerStr :: String -> String
+toLowerStr = map toLower
+
+lowercaseDatabase :: T.Database
+lowercaseDatabase = map (Data.Bifunctor.bimap toLowerStr (map toLowerStr)) database
