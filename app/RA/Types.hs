@@ -4,7 +4,9 @@ import Data.List
 import qualified Sql.Types as SqlT
 
 type Relation = SqlT.Table
+type Relations = [Relation]
 type Attribute = SqlT.Column
+type Attributes = [Attribute]
 
 data RAExpr
     = Value Relation
