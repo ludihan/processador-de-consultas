@@ -1,27 +1,23 @@
 module RA.Converter where
 
-import Data.Maybe
-
-import Data.List.NonEmpty (NonEmpty (..))
-import qualified Data.List.NonEmpty as NE
 import RA.Types
 import qualified Sql.Types as SqlT
 
--- unoptimized tree
 sqlSelect2RA :: SqlT.Select -> RAExpr
-sqlSelect2RA (SqlT.Select cols from joins wher) =
+sqlSelect2RA (SqlT.Select cols from joins mWhere) =
     let
-        allRelations = from : map fst joins :: [Relation]
-        allPreds = map snd joins ++ fromMaybe [] wher
-     in
-        Projection
-            cols
-            ( Selection allPreds (crossFromRelations (NE.fromList allRelations))
-            )
+        fromExpr = Value from
 
-opt :: RAExpr -> RAExpr
-opt expr = undefined
+        joinExpr = foldl applyJoin fromExpr joins
 
-crossFromRelations :: NonEmpty Relation -> RAExpr
-crossFromRelations (x :| []) = Value x
-crossFromRelations (x :| xs) = Cross (Value x) (crossFromRelations $ NE.fromList xs)
+        withSelection = case mWhere of
+            Just preds -> Selection preds joinExpr
+            Nothing    -> joinExpr
+
+        projected = Projection cols withSelection
+    in
+        projected
+
+applyJoin :: RAExpr -> SqlT.Join -> RAExpr
+applyJoin expr (rightTable, joinPred) =
+    Join [joinPred] (Value rightTable) expr

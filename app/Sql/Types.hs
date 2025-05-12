@@ -19,8 +19,6 @@ data RightPredValue
     | RightPredColumn String
     deriving (Eq, Show)
 
--- int | float | string
-
 data ColumnType
     = Int
     | Tinyint

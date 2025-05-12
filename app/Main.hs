@@ -3,21 +3,44 @@
 
 module Main where
 
+import qualified RA.Types as RAT
+import Sql.Parser (parseSelect)
+import Sql.Validator (validateSqlSelect)
+import Text.Megaparsec (errorBundlePretty, parse)
+
+import Data.Text (Text)
+import qualified Data.Text as T
+
 import Control.Lens
 import Monomer
-import TextShow
+import RA.Converter (sqlSelect2RA)
 
-newtype AppModel = AppModel
-    { _clickCount :: Int
+type Error = Text
+
+parseAndValidateSelect :: String -> Either [Error] RAT.RAExpr
+parseAndValidateSelect sel =
+    case parse parseSelect "<input>" sel of
+        Left bundle -> Left $ map T.pack (Prelude.lines $ errorBundlePretty bundle)
+        Right parsed ->
+            case validateSqlSelect parsed of
+                [] -> Right (sqlSelect2RA parsed)
+                xs -> Left (map T.pack xs)
+
+data AppModel = AppModel
+    { _sqlInput :: Text
+    , _raOutput :: Text
+    , _planOutput :: Text
+    , _errors :: [Error]
     }
     deriving (Eq, Show)
 
 data AppEvent
     = AppInit
-    | AppIncrease
+    | ShouldParseRA
+    | ShouldParsePlan
     deriving (Eq, Show)
 
-makeLenses 'AppModel
+makeLenses ''AppModel
 
 buildUI ::
     WidgetEnv AppModel AppEvent ->
@@ -27,12 +50,35 @@ buildUI wenv model = widgetTree
   where
     widgetTree =
         vstack
-            [ label "Hello world"
+            [ textArea sqlInput
+                `nodeKey` "sqlInput"
+                `styleBasic` [padding 10, height 200]
             , spacer
             , hstack
-                [ label $ "Click count: " <> showt (model ^. clickCount)
+                [ button "Parse to Relational Algebra" ShouldParseRA
                 , spacer
-                , button "Increase count" AppIncrease
+                , button "Parse to Query Plan" ShouldParsePlan
+                ]
+            , spacer
+            , vstack
+                [ label_
+                    ( if Prelude.null (model ^. errors)
+                        then T.pack ""
+                        else T.concat ["Errors: ", T.unlines (model ^. errors)]
+                    )
+                    [multiline]
+                , label_
+                    ( if T.null (model ^. raOutput)
+                        then T.pack ""
+                        else model ^. raOutput
+                    )
+                    [multiline]
+                , label_
+                    ( if T.null (model ^. planOutput)
+                        then T.pack ""
+                        else model ^. planOutput
+                    )
+                    [multiline]
                 ]
             ]
             `styleBasic` [padding 10]
@@ -43,20 +89,59 @@ handleEvent ::
     AppModel ->
     AppEvent ->
     [AppEventResponse AppModel AppEvent]
-handleEvent wenv node model evt = case evt of
+handleEvent _ _ model evt = case evt of
     AppInit -> []
-    AppIncrease -> [Model (model & clickCount +~ 1)]
+    ShouldParseRA ->
+        let sqlInputText = model ^. sqlInput
+            parseResult = parseAndValidateSelect (T.unpack sqlInputText)
+         in case parseResult of
+                Left errs ->
+                    [ Model
+                        ( model
+                            & errors .~ errs
+                            & raOutput .~ ""
+                            & planOutput .~ ""
+                        )
+                    ]
+                Right parsed ->
+                    [ Model
+                        ( model
+                            & errors .~ []
+                            & raOutput .~ (T.pack . show) parsed
+                            & planOutput .~ ""
+                        )
+                    ]
+    ShouldParsePlan ->
+        let sqlInputText = model ^. sqlInput
+            parseResult = parseAndValidateSelect (T.unpack sqlInputText)
+         in case parseResult of
+                Left errs ->
+                    [ Model
+                        ( model
+                            & errors .~ errs
+                            & raOutput .~ ""
+                            & planOutput .~ ""
+                        )
+                    ]
+                Right parsed ->
+                    [ Model
+                        ( model
+                            & errors .~ []
+                            & raOutput .~ (T.pack . show) parsed
+                            & planOutput .~ ""
+                        )
+                    ]
 
 main :: IO ()
 main = do
     startApp model handleEvent buildUI config
   where
     config =
-        [ appWindowTitle "Dev test app"
+        [ appWindowTitle "Processador de Consultas"
         , appWindowIcon "./assets/images/icon.png"
         , appTheme darkTheme
-        , appFontDef "Regular" "./assets/fonts/Roboto-Regular.ttf"
+        , appFontDef "Regular" "./assets/fonts/Hack-Regular.ttf"
         , appInitEvent AppInit
         , appModelFingerprint show
         ]
-    model = AppModel 0
+    model = AppModel "" "" "" []
