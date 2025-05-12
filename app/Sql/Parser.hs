@@ -5,29 +5,10 @@ import Data.Void
 import Text.Megaparsec
 import Text.Megaparsec.Char
 
-import Data.List (intercalate)
 import qualified Sql.Types as T
 import qualified Text.Megaparsec.Char.Lexer as L
 
 type Parser = Parsec Void String
-
-selectPretty :: String -> IO ()
-selectPretty sel =
-    let a = parse parseSelect "<input>" sel
-        formatList = intercalate ", "
-     in case a of
-            Left bundle -> putStr (errorBundlePretty bundle)
-            Right (T.Select cols from joins wher) ->
-                putStrLn $
-                    "Select\n"
-                        ++ "cols: "
-                        ++ formatList cols
-                        ++ "\nfrom: "
-                        ++ from
-                        ++ "\njoin: "
-                        ++ show joins
-                        ++ "\nwhere: "
-                        ++ show wher
 
 keywords :: [String]
 keywords = ["select", "from", "join", "where", "on"]

@@ -17,7 +17,8 @@ executable processador-de-consultas
         Sql.Examples,
         RA.Types,
         RA.Converter,
-        Database.Schema
+        Database.Schema,
+        Test
 
     build-depends:
         base ^>=4.18.3.0,
