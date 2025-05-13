@@ -10,9 +10,10 @@ type Column = String
 type Columns = [Column]
 type Table = String
 type From = Table
-type Join = (Table, (Column, Op, RightPredValue))
+type Join = (Table, Pred)
 type Joins = [Join]
-type Where = [(Column, Op, RightPredValue)]
+type Where = [Pred]
+type Pred = (Column, Op, RightPredValue)
 
 data RightPredValue
     = RightPredLiteral String
