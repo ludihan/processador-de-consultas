@@ -123,3 +123,12 @@ findMatchFromCol col =
                 Nothing
             else
                 Just (map fst t, head found)
+
+isColFromTable :: Column -> Table -> Bool
+isColFromTable col tab =
+    any
+        ( \(t, c) ->
+            let aaa = reverse $ takeWhile (/= '.') $ reverse col
+             in toLowerStr tab == toLowerStr t
+                    && any (\alkj -> toLowerStr alkj == toLowerStr aaa ) c)
+        lowercaseDatabase

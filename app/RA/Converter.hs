@@ -1,9 +1,10 @@
 module RA.Converter where
 
 import Data.List
+import qualified Data.Maybe
 import Database.Schema
 import RA.Types
-import Sql.Parser (parseSql)
+import Sql.Parser
 import qualified Sql.Types as SqlT
 import Sql.Validator (validateSqlSelect)
 import Text.Megaparsec (errorBundlePretty)
@@ -13,7 +14,6 @@ type ParsingErrors = String
 sqlSelect2ra :: SqlT.Select -> RAExpr
 sqlSelect2ra (SqlT.Select cols from joins mWhere) =
     let
-        -- projectionOpt = [(t,filterColsFromTable h)]
         fromExpr = Value from
 
         joinExpr = foldl applyJoin fromExpr joins
@@ -24,7 +24,59 @@ sqlSelect2ra (SqlT.Select cols from joins mWhere) =
 
         projected = Projection cols withSelection
      in
-        projected
+        snd $ optRemoveAttributes $ optRemoveTuples projected
+
+optRemoveTuples :: RAExpr -> RAExpr
+optRemoveTuples ra =
+    let
+        makeOpt _ (Projection cs v) = Projection cs (makeOpt [] v)
+        makeOpt _ (Selection preds v) = makeOpt preds v
+        makeOpt passingP (Join preds v1 v2) =
+            Join
+                preds
+                (makeOpt passingP v1)
+                (makeOpt passingP v2)
+        makeOpt x (Value v) =
+            let matches = filter (\(t, _, _) -> isColFromTable t v) x
+             in if null matches
+                    then
+                        Value v
+                    else
+                        Selection matches (Value v)
+     in
+        makeOpt [] ra
+
+optRemoveAttributes ra =
+    let
+        makeOpt _ (Projection cs v) =
+            let (notin, tree) = makeOpt cs v
+             in ([], Projection notin tree)
+        makeOpt ats (Selection preds v) =
+            let (notin, tree) = makeOpt ats v
+             in (notin, Selection preds tree)
+        makeOpt ats (Value v) =
+            let
+                cols = filter (\x -> isColFromTable x v) ats
+                nottt = filter (\x -> not $ isColFromTable x v) ats
+             in
+                if null cols
+                    then
+                        (nottt, Value v)
+                    else
+                        (nottt, Projection cols (Value v))
+        makeOpt ats (Join preds v1 v2) =
+            let
+                (notin1, tree1) = makeOpt ats v1
+                (notin2, tree2) = makeOpt ats v2
+             in
+                ( notin1 ++ notin2
+                , Join
+                    preds
+                    tree1
+                    tree2
+                )
+     in
+        makeOpt [] ra
 
 applyJoin :: RAExpr -> SqlT.Join -> RAExpr
 applyJoin expr (table, joinPred) =
