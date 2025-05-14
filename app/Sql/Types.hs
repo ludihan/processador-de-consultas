@@ -35,4 +35,12 @@ data Op
     | Le
     | Gt
     | Ge
-    deriving (Eq, Show)
+    deriving (Eq)
+
+instance Show Op where
+    show Eq = "="
+    show Ne = "<>"
+    show Lt = "<"
+    show Le = "<="
+    show Gt = ">"
+    show Ge = ">="

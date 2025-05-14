@@ -44,4 +44,4 @@ select2RA :: String -> IO ()
 select2RA sel =
     case parse parseSelect "<input>" sel of
         Left bundle -> print bundle
-        Right x -> print (C.sqlSelect2RA x)
+        Right x -> print (C.sqlSelect2ra x)

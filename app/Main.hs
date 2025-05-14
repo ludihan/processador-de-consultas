@@ -13,7 +13,7 @@ import qualified Data.Text as T
 
 import Control.Lens
 import Monomer
-import RA.Converter (sqlSelect2RA)
+import RA.Converter (ra2QueryPlan, sqlSelect2ra)
 
 type Error = Text
 
@@ -23,7 +23,7 @@ parseAndValidateSelect sel =
         Left bundle -> Left $ map T.pack (Prelude.lines $ errorBundlePretty bundle)
         Right parsed ->
             case validateSqlSelect parsed of
-                [] -> Right (sqlSelect2RA parsed)
+                [] -> Right (sqlSelect2ra parsed)
                 xs -> Left (map T.pack xs)
 
 data AppModel = AppModel
@@ -46,7 +46,7 @@ buildUI ::
     WidgetEnv AppModel AppEvent ->
     AppModel ->
     WidgetNode AppModel AppEvent
-buildUI wenv model = widgetTree
+buildUI _ model = widgetTree
   where
     widgetTree =
         vstack
@@ -127,7 +127,7 @@ handleEvent _ _ model evt = case evt of
                     [ Model
                         ( model
                             & errors .~ []
-                            & raOutput .~ (T.pack . show) parsed
+                            & raOutput .~ (T.pack . unlines . reverse . ra2QueryPlan) parsed
                             & planOutput .~ ""
                         )
                     ]
