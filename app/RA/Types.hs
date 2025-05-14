@@ -12,7 +12,6 @@ data RAExpr
     = Value Relation
     | Projection [Attribute] RAExpr
     | Selection Pred RAExpr
-    | Cross RAExpr RAExpr
     | Join Pred RAExpr RAExpr
 
 instance Show RAExpr where
@@ -45,8 +44,6 @@ instance Show RAExpr where
                         indentLine ("σ " ++ prettyPreds preds) ++ "\n" ++ go ind sub
                     Join preds l r ->
                         indentLine ("|X| " ++ prettyPreds preds) ++ "\n" ++ go ind l ++ "\n" ++ go ind r
-                    Cross l r ->
-                        indentLine "X " ++ "\n" ++ go ind l ++ "\n" ++ go ind r
 type Value = String
 
 type RightPredValue = SqlT.RightPredValue

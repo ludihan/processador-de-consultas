@@ -28,7 +28,6 @@ ra2QueryPlan :: RAExpr -> [String]
 ra2QueryPlan (Value rel) = [rel]
 ra2QueryPlan (Projection attr expr) = ("Projection" ++ show attr) : ra2QueryPlan expr
 ra2QueryPlan (Selection p expr) = ("Selection" ++ show p) : ra2QueryPlan expr
-ra2QueryPlan (Cross expr1 expr2) = "Cross" : (ra2QueryPlan expr1 ++ ra2QueryPlan expr2)
 ra2QueryPlan (Join p expr1 expr2) = ("Join" ++ show p) : ra2QueryPlan expr1 ++ ra2QueryPlan expr2
 
 filterColsFromTable :: Attributes -> Relation -> Attributes
