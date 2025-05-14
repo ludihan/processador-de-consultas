@@ -3,28 +3,14 @@
 
 module Main where
 
-import qualified RA.Types as RAT
-import Sql.Parser (parseSelect)
-import Sql.Validator (validateSqlSelect)
-import Text.Megaparsec (errorBundlePretty, parse)
-
 import Data.Text (Text)
 import qualified Data.Text as T
 
 import Control.Lens
 import Monomer
-import RA.Converter (ra2QueryPlan, sqlSelect2ra)
+import RA.Converter
 
 type Error = Text
-
-parseAndValidateSelect :: String -> Either [Error] RAT.RAExpr
-parseAndValidateSelect sel =
-    case parse parseSelect "<input>" sel of
-        Left bundle -> Left $ map T.pack (Prelude.lines $ errorBundlePretty bundle)
-        Right parsed ->
-            case validateSqlSelect parsed of
-                [] -> Right (sqlSelect2ra parsed)
-                xs -> Left (map T.pack xs)
 
 data AppModel = AppModel
     { _sqlInput :: Text
@@ -34,13 +20,13 @@ data AppModel = AppModel
     }
     deriving (Eq, Show)
 
+makeLenses ''AppModel
+
 data AppEvent
     = AppInit
     | ShouldParseRA
     | ShouldParsePlan
     deriving (Eq, Show)
-
-makeLenses ''AppModel
 
 buildUI ::
     WidgetEnv AppModel AppEvent ->
@@ -93,12 +79,12 @@ handleEvent _ _ model evt = case evt of
     AppInit -> []
     ShouldParseRA ->
         let sqlInputText = model ^. sqlInput
-            parseResult = parseAndValidateSelect (T.unpack sqlInputText)
+            parseResult = sqlSelectString2ra (T.unpack sqlInputText)
          in case parseResult of
                 Left errs ->
                     [ Model
                         ( model
-                            & errors .~ errs
+                            & errors .~ errorsToGui errs
                             & raOutput .~ ""
                             & planOutput .~ ""
                         )
@@ -113,12 +99,12 @@ handleEvent _ _ model evt = case evt of
                     ]
     ShouldParsePlan ->
         let sqlInputText = model ^. sqlInput
-            parseResult = parseAndValidateSelect (T.unpack sqlInputText)
+            parseResult = sqlSelectString2QueryPlan (T.unpack sqlInputText)
          in case parseResult of
                 Left errs ->
                     [ Model
                         ( model
-                            & errors .~ errs
+                            & errors .~ errorsToGui errs
                             & raOutput .~ ""
                             & planOutput .~ ""
                         )
@@ -127,10 +113,13 @@ handleEvent _ _ model evt = case evt of
                     [ Model
                         ( model
                             & errors .~ []
-                            & raOutput .~ (T.pack . unlines . reverse . ra2QueryPlan) parsed
+                            & raOutput .~ (T.pack . unlines . reverse) parsed
                             & planOutput .~ ""
                         )
                     ]
+
+errorsToGui :: [String] -> [Text]
+errorsToGui = map T.pack
 
 main :: IO ()
 main = do

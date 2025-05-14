@@ -59,7 +59,7 @@ prettyRAExpr indLvl ra =
                 indentConcat
                     [ "|X| " ++ prettyPreds preds
                     , "\n"
-                    , prettyRAExpr ind l
+                    , prettyRAExpr (ind + 2) l
                     , "\n"
-                    , prettyRAExpr ind r
+                    , prettyRAExpr (ind + 2) r
                     ]

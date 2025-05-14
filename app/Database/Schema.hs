@@ -1,8 +1,8 @@
 module Database.Schema where
 
+import qualified Data.Bifunctor
 import Data.Char
 import Sql.Types as T
-import qualified Data.Bifunctor
 
 database :: T.Database
 database =
@@ -107,3 +107,19 @@ toLowerStr = map toLower
 
 lowercaseDatabase :: T.Database
 lowercaseDatabase = map (Data.Bifunctor.bimap toLowerStr (map toLowerStr)) database
+
+allCols :: Columns
+allCols = concatMap snd database
+
+findMatchFromCol :: Column -> Maybe ([Table], Column)
+findMatchFromCol col =
+    let
+        c = reverse $ takeWhile (/= '.') $ reverse col
+        found = filter (\x -> toLowerStr x == toLowerStr c) allCols
+        t = filter (\x -> toLowerStr c `elem` map toLowerStr (snd x)) database
+     in
+        if null found
+            then
+                Nothing
+            else
+                Just (map fst t, head found)
