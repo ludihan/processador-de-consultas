@@ -18,15 +18,11 @@ type Pred = (Column, Op, RightPredValue)
 data RightPredValue
     = RightPredLiteral String
     | RightPredColumn String
-    deriving (Eq, Show)
+    deriving (Eq)
 
-data ColumnType
-    = Int
-    | Tinyint
-    | Varchar Int
-    | Datetime
-    | Decimal Int Int
-    deriving (Eq, Show)
+instance Show RightPredValue where
+    show (RightPredLiteral x) = x
+    show (RightPredColumn x) = x
 
 data Op
     = Eq
@@ -44,3 +40,12 @@ instance Show Op where
     show Le = "<="
     show Gt = ">"
     show Ge = ">="
+{-
+data ColumnType
+    = Int
+    | Tinyint
+    | Varchar Int
+    | Datetime
+    | Decimal Int Int
+    deriving (Eq, Show)
+-}

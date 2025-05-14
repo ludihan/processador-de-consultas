@@ -15,36 +15,51 @@ data RAExpr
     | Join Pred RAExpr RAExpr
 
 instance Show RAExpr where
-    show = go 0
-      where
-        go :: Int -> RAExpr -> String
-        go indLvl ra =
-            let
-                indentLine :: String -> String
-                indentLine s = replicate indLvl ' ' ++ s
+    show = prettyRAExpr 0
 
-                prettyPreds :: [(SqlT.Column, SqlT.Op, SqlT.RightPredValue)] -> String
-                prettyPreds = intercalate ", " . map prettyPred
-
-                prettyPred :: (SqlT.Column, SqlT.Op, SqlT.RightPredValue) -> String
-                prettyPred (col, op, val) = col ++ " " ++ show op ++ " " ++ prettyVal val
-
-                prettyVal :: SqlT.RightPredValue -> String
-                prettyVal (SqlT.RightPredLiteral s) = "'" ++ s ++ "'"
-                prettyVal (SqlT.RightPredColumn c) = c
-
-                ind = indLvl + 2
-             in
-                case ra of
-                    Value rel ->
-                        indentLine rel
-                    Projection attrs sub ->
-                        indentLine ("π " ++ intercalate ", " attrs) ++ "\n" ++ go ind sub
-                    Selection preds sub ->
-                        indentLine ("σ " ++ prettyPreds preds) ++ "\n" ++ go ind sub
-                    Join preds l r ->
-                        indentLine ("|X| " ++ prettyPreds preds) ++ "\n" ++ go ind l ++ "\n" ++ go ind r
 type Value = String
 
 type RightPredValue = SqlT.RightPredValue
 type Pred = [(Attribute, SqlT.Op, RightPredValue)]
+
+prettyPreds :: [(SqlT.Column, SqlT.Op, SqlT.RightPredValue)] -> String
+prettyPreds = intercalate ", " . map prettyPred
+
+prettyPred :: (SqlT.Column, SqlT.Op, SqlT.RightPredValue) -> String
+prettyPred (col, op, val) = col ++ " " ++ show op ++ " " ++ show val
+
+prettyRAExpr :: Int -> RAExpr -> String
+prettyRAExpr indLvl ra =
+    let
+        indentConcat :: [String] -> String
+        indentConcat s = replicate indLvl ' ' ++ concat s
+
+        ind = indLvl + 2
+     in
+        case ra of
+            Value rel ->
+                indentConcat
+                    [ "("
+                    , rel
+                    , ")"
+                    ]
+            Projection attrs sub ->
+                indentConcat
+                    [ "π " ++ intercalate ", " attrs
+                    , "\n"
+                    , prettyRAExpr ind sub
+                    ]
+            Selection preds sub ->
+                indentConcat
+                    [ "σ " ++ prettyPreds preds
+                    , "\n"
+                    , prettyRAExpr ind sub
+                    ]
+            Join preds l r ->
+                indentConcat
+                    [ "|X| " ++ prettyPreds preds
+                    , "\n"
+                    , prettyRAExpr ind l
+                    , "\n"
+                    , prettyRAExpr ind r
+                    ]
